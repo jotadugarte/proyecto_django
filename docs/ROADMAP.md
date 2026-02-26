@@ -7,14 +7,16 @@ Things done and things left to do. Update this when finishing branches; use `roa
 ---
 
 ## Done
-- [x] [Example: Auth & sessions] (REQ-AUTH-001) — 2026-02-15
+- [x] Que los recursos se vayan acumulando con el tiempo según el nivel del extractor. (REQ-PROD-001) — 2026-02-26
+- [x] Mostrar producción por minuto y por hora en la ficha de cada extractor. (REQ-PROD-002) — 2026-02-26
+- [x] **Bug:** Recursos no acumulaban (producción fraccionaria se truncaba a entero). Solución: campo `production_remainder` en Planet. (REQ-PROD-003) — 2026-02-26
 
 ## In Progress
-- [ ] [Example: User dashboard] (REQ-DASH-001) — Branch: feature/dashboard
+- (ninguno)
 
 ## Pending (by priority)
-1. [ ] [Example: Export to CSV] (REQ-EXPORT-001)
-2. [ ] [Example: Email notifications]
-
+1. Crear una pantalla de configuración de valores: costes por nivel de edificios, costes de naves y defensas, producción por hora de extractores. (REQ-CONFIG-001)
+2. Crear la capacidad de atacar otros planetas por recursos. (REQ-COMBAT-001)
+3. Dar visibilidad del ataque al dictador que recibe el ataque. (REQ-COMBAT-002)
 ## Backlog
-- [ ] [Example: Mobile app]
+- (ninguno)

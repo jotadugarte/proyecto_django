@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 
@@ -76,7 +77,19 @@ class Planet(models.Model):
     orbit_index = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(9)])
     name = models.CharField(max_length=100)
     owner = models.ForeignKey(Dictator, on_delete=models.SET_NULL, null=True, blank=True, related_name='planets')
-    
+
+    last_production_tick = models.DateTimeField(
+        null=True,
+        blank=True,
+        default=timezone.now,
+        help_text="Último momento en que se aplicó la producción de extractores.",
+    )
+    production_remainder = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Resto fraccionario de producción por nombre de recurso (para no perder decimales).",
+    )
+
     # Recursos actuales almacenados en el planeta
     resources = models.ManyToManyField(ResourceType, through='PlanetResource')
     buildings = models.ManyToManyField(BuildingType, through='PlanetBuilding')

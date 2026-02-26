@@ -52,6 +52,25 @@
             color: #58a6ff;
         }
 
+        .nav-logout {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid #30363d;
+        }
+
+        .nav-logout .btn-logout {
+            width: 100%;
+            text-align: center;
+            background-color: transparent;
+            border-color: #30363d;
+            color: #8b949e;
+        }
+
+        .nav-logout .btn-logout:hover {
+            background-color: #21262d;
+            color: #f85149;
+        }
+
         main {
             flex: 1;
             padding: 40px;
@@ -144,11 +163,26 @@
             </li>
             {% endfor %}
         </ul>
+        <div class="nav-logout">
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-logout">Cerrar sesión</button>
+            </form>
+        </div>
         {% else %}
-        <p><a href="/admin/">Iniciar Sesión</a></p>
+        <p><a href="{% url 'login' %}">Iniciar sesión</a></p>
         {% endif %}
     </nav>
     <main>
+        {% if messages %}
+        <ul class="messages" style="list-style: none; padding: 0; margin: 0 0 20px 0;">
+            {% for message in messages %}
+            <li style="padding: 10px 16px; border-radius: 6px; margin-bottom: 8px; border: 1px solid {% if message.tags == 'error' %}#f85149{% else %}#3fb950{% endif %}; background: {% if message.tags == 'error' %}#3d1f1f{% else %}#1a2e1a{% endif %}; color: {% if message.tags == 'error' %}#f85149{% else %}#3fb950{% endif %};">
+                {{ message }}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
 </body>

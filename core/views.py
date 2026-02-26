@@ -1,6 +1,40 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
+from django.views.decorators.http import require_http_methods
+
+from .forms import UserRegistrationForm
 from .models import Planet, BuildingType, PlanetBuilding, PlanetResource, PlanetUnit, ResourceType, UnitType
+from .services.production import tick_planet_production
+
+
+class CustomLoginView(LoginView):
+    """Login view that shows a user-facing message on invalid credentials."""
+
+    def form_invalid(self, form):
+        messages.error(self.request, "Usuario o contraseña inválido.")
+        return super().form_invalid(form)
+
+
+@require_http_methods(["GET", "POST"])
+def register(request):
+    """Register a new user (username, name, password). Redirects to login on success."""
+    if request.user.is_authenticated:
+        return redirect("/")
+    form = UserRegistrationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        from django.contrib.auth.models import User
+
+        User.objects.create_user(
+            username=form.cleaned_data["username"].strip(),
+            first_name=form.cleaned_data.get("first_name", "").strip() or None,
+            password=form.cleaned_data["password1"],
+        )
+        messages.success(request, "Usuario creado con éxito.")
+        return redirect("login")
+    return render(request, "registration/register.html", {"form": form})
+
 
 @login_required
 def index(request):
@@ -16,6 +50,8 @@ def index(request):
 @login_required
 def planet_detail(request, planet_id):
     planet = get_object_or_404(Planet, id=planet_id, owner__user=request.user)
+
+    tick_planet_production(planet)
 
     # Get all planets for navigation
     my_planets = Planet.objects.filter(owner__user=request.user)
@@ -98,12 +134,26 @@ def planet_detail(request, planet_id):
                 if res_name not in res_dict or res_dict[res_name].amount < c:
                     can_build = False
 
+        production_display = []
+        if b_type.category == "extraction" and (b_type.production or {}):
+            for res_name, base_rate in b_type.production.items():
+                try:
+                    rate_per_hour = float(base_rate) * max(0, current_level)
+                except (TypeError, ValueError):
+                    rate_per_hour = 0
+                production_display.append({
+                    "resource_name": res_name,
+                    "per_hour": rate_per_hour,
+                    "per_minute": rate_per_hour / 60.0 if rate_per_hour else 0,
+                })
+
         available_buildings.append({
-            'type': b_type,
-            'current_level': current_level,
-            'next_level': next_level,
-            'cost_display': cost_display,
-            'can_build': can_build
+            "type": b_type,
+            "current_level": current_level,
+            "next_level": next_level,
+            "cost_display": cost_display,
+            "can_build": can_build,
+            "production_display": production_display,
         })
 
     # Units
