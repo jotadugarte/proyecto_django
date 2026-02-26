@@ -1,0 +1,205 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ planet.name }}{% endblock %}
+
+{% block content %}
+<style>
+    .res-plastilina {
+        color: #1f6feb;
+        font-weight: bold;
+    }
+
+    /* Azul */
+    .res-energia {
+        color: #2ea44f;
+        font-weight: bold;
+    }
+
+    /* Verde */
+    .res-cafe {
+        color: #8b4500;
+        font-weight: bold;
+    }
+
+    /* Marron */
+    .disabled-btn {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: #30363d !important;
+        border-color: #30363d !important;
+        color: #8b949e !important;
+    }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div>
+        <h1 style="margin: 0;">{{ planet.name }}</h1>
+        <small style="color: #8b949e;">Coordenadas [{{ planet.orbit_index }}:{{ planet.system.number }}]</small>
+    </div>
+
+    <form method="post" style="display: flex; gap: 10px;">
+        {% csrf_token %}
+        <input type="text" name="new_name" placeholder="Nuevo nombre"
+            style="background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 5px; border-radius: 4px;">
+        <button type="submit" name="rename_planet" class="btn" style="background-color: #1f6feb;">Renombrar</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Recursos</h3>
+    <div class="resource-list">
+        {% for res in resources %}
+        <div class="resource-item">
+            <div class="resource-label">{{ res.resource_type.name }}</div>
+            <div
+                class="resource-value {% if res.resource_type.name == 'Plastilina' %}res-plastilina{% elif res.resource_type.name == 'Energía Eólica' %}res-energia{% elif res.resource_type.name == 'Café con Leche' %}res-cafe{% endif %}">
+                {{ res.amount }}
+            </div>
+        </div>
+        {% empty %}
+        <p>No hay recursos almacenados.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- SECCIONES -->
+<div class="card">
+    <h3>Infraestructura</h3>
+
+    <!-- EXTRACTORES -->
+    <h4 style="color: #79c0ff;">Extractores</h4>
+    <div class="grid-container">
+        {% for b_info in buildings_info %}
+        {% if b_info.type.category == 'extraction' %}
+        <div style="background: #21262d; padding: 10px; border-radius: 6px;">
+            <h4>{{ b_info.type.name }}</h4>
+            <p><strong>Nivel Actual: {{ b_info.current_level }}</strong></p>
+
+            <div style="font-size: 0.8em; color: #8b949e; margin-bottom: 10px;">
+                Costo Nivel {{ b_info.next_level }}:
+                {% for res, val in b_info.cost_display.items %}
+                <span
+                    class="{% if res == 'Plastilina' %}res-plastilina{% elif res == 'Energía Eólica' %}res-energia{% elif res == 'Café con Leche' %}res-cafe{% endif %}">
+                    {{ res }}: {{ val }}
+                </span> |
+                {% empty %}
+                Gratis
+                {% endfor %}
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="building_id" value="{{ b_info.type.id }}">
+
+                <button type="submit" name="build_building"
+                    class="btn {% if not b_info.can_build %}disabled-btn{% endif %}" {% if not b_info.can_build %}
+                    disabled {% endif %}>
+                    {% if b_info.current_level == 0 %}
+                    Construir
+                    {% else %}
+                    Mejorar a Nivel {{ b_info.next_level }}
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- DEFENSAS -->
+    <h4 style="color: #ff7b72; margin-top: 30px;">Defensas</h4>
+    <div class="grid-container">
+        {% for b_info in buildings_info %}
+        {% if b_info.type.category == 'defense' %}
+        <div style="background: #21262d; padding: 10px; border-radius: 6px;">
+            <h4>{{ b_info.type.name }}</h4>
+            <p><strong>Nivel Actual: {{ b_info.current_level }}</strong></p>
+
+            <div style="font-size: 0.8em; color: #8b949e; margin-bottom: 10px;">
+                Costo Nivel {{ b_info.next_level }}:
+                {% for res, val in b_info.cost_display.items %}
+                <span
+                    class="{% if res == 'Plastilina' %}res-plastilina{% elif res == 'Energía Eólica' %}res-energia{% elif res == 'Café con Leche' %}res-cafe{% endif %}">
+                    {{ res }}: {{ val }}
+                </span> |
+                {% empty %}
+                Gratis
+                {% endfor %}
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="building_id" value="{{ b_info.type.id }}">
+
+                <button type="submit" name="build_building"
+                    class="btn {% if not b_info.can_build %}disabled-btn{% endif %}" {% if not b_info.can_build %}
+                    disabled {% endif %}>
+                    {% if b_info.current_level == 0 %}
+                    Construir
+                    {% else %}
+                    Mejorar a Nivel {{ b_info.next_level }}
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- HANGAR -->
+    <h4 style="color: #d2a8ff; margin-top: 30px;">Hangar</h4>
+    <div class="grid-container">
+        {% for b_info in buildings_info %}
+        {% if b_info.type.category == 'hangar' %}
+        <div style="background: #21262d; padding: 10px; border-radius: 6px;">
+            <h4>{{ b_info.type.name }}</h4>
+            <p><strong>Nivel Actual: {{ b_info.current_level }}</strong></p>
+
+            {% if b_info.current_level > 0 %}
+            <!-- DENTRO DE LA FABRICA: NAVES -->
+            <div style="margin-top: 10px; border-top: 1px solid #30363d; padding-top: 10px; margin-bottom: 10px;">
+                <h5 style="margin-top:0;">Producción de Naves:</h5>
+                {% for unit in available_units %}
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 0.9em; background: #0d1117; padding: 5px; border-radius: 4px;">
+                    <span>{{ unit.name }}</span>
+                    <a href="#" class="btn" style="padding: 2px 8px; font-size: 0.8em;">Producir</a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: #ff7b72; font-size: 0.9em;">Construye la fábrica para producir naves.</p>
+            {% endif %}
+
+            <div style="font-size: 0.8em; color: #8b949e; margin-bottom: 10px;">
+                Costo Nivel {{ b_info.next_level }}:
+                {% for res, val in b_info.cost_display.items %}
+                <span
+                    class="{% if res == 'Plastilina' %}res-plastilina{% elif res == 'Energía Eólica' %}res-energia{% elif res == 'Café con Leche' %}res-cafe{% endif %}">
+                    {{ res }}: {{ val }}
+                </span> |
+                {% empty %}
+                Gratis
+                {% endfor %}
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="building_id" value="{{ b_info.type.id }}">
+
+                <button type="submit" name="build_building"
+                    class="btn {% if not b_info.can_build %}disabled-btn{% endif %}" {% if not b_info.can_build %}
+                    disabled {% endif %}>
+                    {% if b_info.current_level == 0 %}
+                    Construir
+                    {% else %}
+                    Mejorar a Nivel {{ b_info.next_level }}
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

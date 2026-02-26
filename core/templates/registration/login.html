@@ -1,0 +1,22 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block content %}
+<div
+    style="max-width: 400px; margin: 0 auto; background: #161b22; padding: 20px; border-radius: 6px; border: 1px solid #30363d;">
+    <h2>Iniciar Sesión</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div style="margin-bottom: 15px;">
+            <label for="id_username" style="display: block; margin-bottom: 5px;">Usuario:</label>
+            {{ form.username }}
+        </div>
+        <div style="margin-bottom: 15px;">
+            <label for="id_password" style="display: block; margin-bottom: 5px;">Contraseña:</label>
+            {{ form.password }}
+        </div>
+        <button type="submit" class="btn">Entrar</button>
+    </form>
+</div>
+{% endblock %}
