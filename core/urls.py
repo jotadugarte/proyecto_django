@@ -10,6 +10,7 @@ urlpatterns = [
     
     # Game Master Dashboard Routes
     path("game-master/", views.gm_dashboard, name="gm_dashboard"),
+    path("game-master/users/create/", views.gm_create_user, name="gm_create_user"),
     path("game-master/settings/", views.gm_edit_settings, name="gm_edit_settings"),
     path("game-master/building/<int:pk>/", views.gm_edit_building, name="gm_edit_building"),
     path("game-master/unit/<int:pk>/", views.gm_edit_unit, name="gm_edit_unit"),

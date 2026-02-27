@@ -145,6 +145,25 @@
             padding: 8px;
             border-bottom: 1px solid #30363d;
         }
+
+        .message-item {
+            padding: 10px 16px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border: 1px solid;
+        }
+
+        .message-success {
+            border-color: #3fb950;
+            background: #1a2e1a;
+            color: #3fb950;
+        }
+
+        .message-error {
+            border-color: #f85149;
+            background: #3d1f1f;
+            color: #f85149;
+        }
     </style>
 </head>
 
@@ -153,6 +172,7 @@
         <h2>Imperio</h2>
         {% if user.is_authenticated %}
         <p>Dictador: <strong>{{ user.username }}</strong></p>
+        {% if not is_game_master %}
         <h3>Mis Planetas</h3>
         <ul>
             {% for p in my_planets %}
@@ -163,8 +183,9 @@
             </li>
             {% endfor %}
         </ul>
+        {% endif %}
 
-        {% if user.is_superuser %}
+        {% if is_game_master %}
         <hr style="border-color: #30363d; margin: 15px 0;">
         <h3 style="color: #d29922;">Administración</h3>
         <ul>
@@ -187,8 +208,7 @@
         {% if messages %}
         <ul class="messages" style="list-style: none; padding: 0; margin: 0 0 20px 0;">
             {% for message in messages %}
-            <li
-                style="padding: 10px 16px; border-radius: 6px; margin-bottom: 8px; border: 1px solid {% if message.tags == 'error' %}#f85149{% else %}#3fb950{% endif %}; background: {% if message.tags == 'error' %}#3d1f1f{% else %}#1a2e1a{% endif %}; color: {% if message.tags == 'error' %}#f85149{% else %}#3fb950{% endif %};">
+            <li class="message-item {% if message.tags == 'error' %}message-error{% else %}message-success{% endif %}">
                 {{ message }}
             </li>
             {% endfor %}

@@ -6,8 +6,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.views.decorators.http import require_http_methods
 
-from .decorators import game_master_required
-from .forms import BuildingTypeForm, GameSettingsForm, UnitTypeForm, UserRegistrationForm
+from .decorators import game_master_required, is_game_master
+from .forms import (
+    BuildingTypeForm,
+    GameSettingsForm,
+    PrivilegedUserCreateForm,
+    UnitTypeForm,
+    UserRegistrationForm,
+)
 from .models import (
     BuildingType,
     GameSettings,
@@ -50,6 +56,8 @@ def register(request):
 
 @login_required
 def index(request):
+    if is_game_master(request.user):
+        return redirect("gm_dashboard")
     try:
         dictator = request.user.dictator_profile
         if dictator.main_planet:
@@ -83,6 +91,9 @@ def _ensure_planet_resources(planet: Planet) -> dict[str, PlanetResource]:
 
 @login_required
 def planet_detail(request, planet_id):
+    if is_game_master(request.user):
+        messages.error(request, "Acceso denegado: las cuentas administrativas no tienen planetas asignados.")
+        return redirect("gm_dashboard")
     planet = get_object_or_404(Planet, id=planet_id, owner__user=request.user)
     tick_planet_production(planet)
     my_planets = Planet.objects.filter(owner__user=request.user)
@@ -127,8 +138,33 @@ def gm_dashboard(request):
         "buildings": buildings,
         "units": units,
         "settings": settings,
+        "can_create_superusers": request.user.is_superuser,
     }
     return render(request, "core/game_master/dashboard.html", context)
+
+
+@game_master_required
+def gm_create_user(request):
+    if request.method == "POST":
+        form = PrivilegedUserCreateForm(request.POST, creator_user=request.user)
+        if form.is_valid():
+            created_user = form.save()
+            messages.success(request, f"Usuario '{created_user.username}' creado con éxito.")
+            return redirect("gm_dashboard")
+    else:
+        form = PrivilegedUserCreateForm(creator_user=request.user)
+
+    return render(
+        request,
+        "core/game_master/edit_entity.html",
+        {
+            "form": form,
+            "title": "Crear usuario administrativo",
+            "description": "Superusuario: puede crear superusuarios y Game Masters. Game Master: solo puede crear Game Masters.",
+            "entity_name": "Usuario",
+        },
+    )
+
 
 @game_master_required
 def gm_edit_settings(request):

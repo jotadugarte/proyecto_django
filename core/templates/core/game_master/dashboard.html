@@ -26,6 +26,20 @@
     </div>
 </div>
 
+<!-- Users Section -->
+<h2 style="margin-top: 40px; color: #c9d1d9;">Usuarios</h2>
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h3 style="margin: 0; border: none; font-size: 1.25em;">Creación de usuarios administrativos</h3>
+            <div style="color: #8b949e; margin-top: 6px;">
+                Superusuario: puede crear superusuarios y Game Masters. Game Master: solo puede crear Game Masters.
+            </div>
+        </div>
+        <a href="{% url 'gm_create_user' %}" class="btn" style="background-color: #30363d; border-color: #8b949e;">Crear usuario</a>
+    </div>
+</div>
+
 <!-- Buildings Section -->
 <h2 style="margin-top: 40px; color: #c9d1d9;">Estructuras / Edificios</h2>
 <table>

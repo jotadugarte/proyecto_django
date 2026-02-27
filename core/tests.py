@@ -1,5 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
+from django.contrib.auth.models import Group, User
+from django.urls import reverse
 from datetime import timedelta
 
 from core.models import (
@@ -71,3 +73,70 @@ class TickPlanetProductionTests(TestCase):
         tick_planet_production(self.planet)
         pr.refresh_from_db()
         self.assertGreaterEqual(pr.amount, 0)
+
+
+class AdminAccessAndUserCreationTests(TestCase):
+    def setUp(self) -> None:
+        self.gm_group, _ = Group.objects.get_or_create(name="Game Master")
+
+        self.superuser = User.objects.create_user(
+            username="admin",
+            password="adminpass123",
+            is_staff=True,
+            is_superuser=True,
+            is_active=True,
+        )
+
+        self.gm_user = User.objects.create_user(
+            username="gm",
+            password="gmpass123",
+            is_staff=True,
+            is_superuser=False,
+            is_active=True,
+        )
+        self.gm_user.groups.add(self.gm_group)
+
+    def test_index_redirects_privileged_users_to_gm_dashboard(self) -> None:
+        self.client.login(username="admin", password="adminpass123")
+        resp = self.client.get(reverse("index"))
+        self.assertRedirects(resp, reverse("gm_dashboard"))
+
+        self.client.logout()
+        self.client.login(username="gm", password="gmpass123")
+        resp = self.client.get(reverse("index"))
+        self.assertRedirects(resp, reverse("gm_dashboard"))
+
+    def test_gm_cannot_create_superuser(self) -> None:
+        self.client.login(username="gm", password="gmpass123")
+        resp = self.client.post(
+            reverse("gm_create_user"),
+            {
+                "username": "new_admin",
+                "first_name": "Nuevo",
+                "role": "superuser",
+                "password1": "SomePass1234",
+                "password2": "SomePass1234",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(User.objects.filter(username="new_admin").exists())
+
+    def test_gm_can_create_game_master(self) -> None:
+        self.client.login(username="gm", password="gmpass123")
+        resp = self.client.post(
+            reverse("gm_create_user"),
+            {
+                "username": "new_gm",
+                "first_name": "Nuevo GM",
+                "role": "game_master",
+                "password1": "SomePass1234",
+                "password2": "SomePass1234",
+            },
+        )
+        self.assertRedirects(resp, reverse("gm_dashboard"))
+
+        new_gm = User.objects.get(username="new_gm")
+        self.assertTrue(new_gm.is_active)
+        self.assertTrue(new_gm.is_staff)
+        self.assertFalse(new_gm.is_superuser)
+        self.assertTrue(new_gm.groups.filter(name="Game Master").exists())

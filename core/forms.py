@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
+from django.contrib.auth.models import Group
 from .models import BuildingType, GameSettings, ResourceType, UnitType
 
 
@@ -44,10 +45,90 @@ class UserRegistrationForm(forms.Form):
             raise forms.ValidationError({"password2": "Las contraseñas no coinciden."})
         return data
 
+
+class PrivilegedUserCreateForm(forms.Form):
+    ROLE_SUPERUSER = "superuser"
+    ROLE_GAME_MASTER = "game_master"
+
+    username = forms.CharField(max_length=150, label="Usuario")
+    first_name = forms.CharField(max_length=150, label="Nombre", required=False)
+    role = forms.ChoiceField(choices=())
+    password1 = forms.CharField(label="Contraseña", widget=forms.PasswordInput())
+    password2 = forms.CharField(label="Repetir contraseña", widget=forms.PasswordInput())
+
+    def __init__(self, *args, creator_user: User, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.creator_user = creator_user
+
+        if creator_user.is_superuser:
+            self.fields["role"].choices = [
+                (self.ROLE_SUPERUSER, "Superusuario"),
+                (self.ROLE_GAME_MASTER, "Game Master"),
+            ]
+        else:
+            self.fields["role"].choices = [
+                (self.ROLE_GAME_MASTER, "Game Master"),
+            ]
+
+    def clean_username(self) -> str:
+        username = (self.cleaned_data.get("username") or "").strip()
+        if not username:
+            raise forms.ValidationError("El usuario es obligatorio.")
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("Ese nombre de usuario ya está en uso.")
+        return username
+
+    def clean(self) -> dict[str, str]:
+        data = super().clean()
+        if data is None:
+            return {}
+
+        p1 = data.get("password1")
+        p2 = data.get("password2")
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError({"password2": "Las contraseñas no coinciden."})
+
+        role = data.get("role")
+        allowed_roles = {c[0] for c in self.fields["role"].choices}
+        if role and role not in allowed_roles:
+            raise forms.ValidationError({"role": "No tienes permiso para crear este tipo de usuario."})
+
+        if role == self.ROLE_SUPERUSER and not self.creator_user.is_superuser:
+            raise forms.ValidationError({"role": "Solo un superusuario puede crear otros superusuarios."})
+
+        return data
+
+    def save(self) -> User:
+        username = self.cleaned_data["username"].strip()
+        first_name = (self.cleaned_data.get("first_name") or "").strip()
+        role = self.cleaned_data["role"]
+
+        user = User.objects.create_user(
+            username=username,
+            first_name=first_name,
+            password=self.cleaned_data["password1"],
+            is_active=True,
+        )
+
+        if role == self.ROLE_SUPERUSER:
+            user.is_superuser = True
+            user.is_staff = True
+            user.save(update_fields=["is_superuser", "is_staff"])
+        elif role == self.ROLE_GAME_MASTER:
+            user.is_superuser = False
+            user.is_staff = True
+            user.save(update_fields=["is_superuser", "is_staff"])
+            gm_group, _ = Group.objects.get_or_create(name="Game Master")
+            user.groups.add(gm_group)
+
+        return user
+
+
 class GameSettingsForm(forms.ModelForm):
     class Meta:
         model = GameSettings
         fields = ['building_growth_factor', 'production_speed_multiplier']
+
 
 class DynamicJSONFormMixin:
     """

@@ -6,6 +6,9 @@
 <div
     style="background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 30px; max-width: 600px; margin: 0 auto;">
     <h2 style="margin-top: 0; color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 15px;">{{ title }}</h2>
+    {% if description %}
+    <div style="color: #8b949e; margin-top: 10px;">{{ description }}</div>
+    {% endif %}
 
     <form method="post" style="margin-top: 20px;">
         {% csrf_token %}

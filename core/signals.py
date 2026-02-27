@@ -14,6 +14,9 @@ def create_dictator_profile(sender, instance, created, **kwargs) -> None:
     """On new User creation: create Dictator and assign one unoccupied planet."""
     if not created:
         return
+    if instance.is_staff or instance.is_superuser:
+        logger.info("Skipping dictator/planet assignment for privileged user %s", instance.username)
+        return
     dictator = Dictator.objects.create(user=instance)
     free_planet = Planet.objects.filter(owner__isnull=True).order_by("?").first()
     if free_planet:

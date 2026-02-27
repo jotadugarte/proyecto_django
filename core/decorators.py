@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import user_passes_test
 
 def is_game_master(user):
     return user.is_active and (
-        user.is_superuser or user.groups.filter(name='Game Master').exists()
+        user.is_superuser or user.is_staff or user.groups.filter(name='Game Master').exists()
     )
 
 def game_master_required(view_func):
