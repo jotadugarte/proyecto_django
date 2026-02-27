@@ -2,3 +2,14 @@
 .agentcore/*
 !.agentcore/.gitkeep
 mi_juego/AgentCore/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+
+# Django
+db.sqlite3
+*.log
+local_settings.py

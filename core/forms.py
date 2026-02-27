@@ -33,8 +33,10 @@ class UserRegistrationForm(forms.Form):
             raise forms.ValidationError("Ese nombre de usuario ya está en uso.")
         return username
 
-    def clean(self) -> dict:
+    def clean(self) -> dict[str, str]:
         data = super().clean()
+        if data is None:
+            return {}
         p1 = data.get("password1")
         p2 = data.get("password2")
         if p1 and p2 and p1 != p2:

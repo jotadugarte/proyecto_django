@@ -1,31 +1,28 @@
 """Production tick: accumulate resources over time from extractor building levels."""
 
+from datetime import datetime
+
 from django.utils import timezone
 
 from core.models import Planet, PlanetBuilding, PlanetResource, ResourceType
 
 
-def tick_planet_production(planet: Planet) -> None:
+def _compute_produced(planet: Planet, now: datetime) -> dict[str, float] | None:
     """
-    Apply extractor production since last_production_tick; update planet resources and tick time.
-
-    Only buildings with category 'extraction' and level >= 1 produce. Production is
-    base rate (per hour at level 1) * level * elapsed hours.
+    Compute production amounts since last_production_tick. Returns None if no production to apply.
+    If last_production_tick is None, sets it to now and returns None.
     """
-    now = timezone.now()
     if planet.last_production_tick is None:
         planet.last_production_tick = now
         planet.save(update_fields=["last_production_tick"])
-        return
+        return None
 
     elapsed_seconds = (now - planet.last_production_tick).total_seconds()
     elapsed_hours = elapsed_seconds / 3600.0
     if elapsed_hours <= 0:
-        return
+        return None
 
-    # Sum production by resource name: { "Plastilina": 123.4, ... }
     produced: dict[str, float] = {}
-
     extractors = PlanetBuilding.objects.filter(
         planet=planet,
         building_type__category="extraction",
@@ -41,6 +38,15 @@ def tick_planet_production(planet: Planet) -> None:
                 continue
             produced[res_name] = produced.get(res_name, 0.0) + rate * elapsed_hours
 
+    return produced
+
+
+def _apply_production_to_planet(
+    planet: Planet,
+    produced: dict[str, float],
+    now: datetime,
+) -> None:
+    """Update planet resources and remainder from produced amounts; set last_production_tick."""
     remainder = getattr(planet, "production_remainder", None) or {}
     new_remainder: dict[str, float] = dict(remainder)
 
@@ -69,3 +75,17 @@ def tick_planet_production(planet: Planet) -> None:
     planet.last_production_tick = now
     planet.production_remainder = new_remainder
     planet.save(update_fields=["last_production_tick", "production_remainder"])
+
+
+def tick_planet_production(planet: Planet) -> None:
+    """
+    Apply extractor production since last_production_tick; update planet resources and tick time.
+
+    Only buildings with category 'extraction' and level >= 1 produce. Production is
+    base rate (per hour at level 1) * level * elapsed hours.
+    """
+    assert planet.pk is not None, "Planet must be persisted to run production tick"
+    now = timezone.now()
+    produced = _compute_produced(planet, now)
+    if produced is not None:
+        _apply_production_to_planet(planet, produced, now)
