@@ -23,11 +23,15 @@ def get_buildings_info_for_planet(
 
         cost_display: dict[str, int] = {}
         can_build = True
+        
+        from core.models import GameSettings
+        settings = GameSettings.load()
+        
         if b_type.name == "Planta Eolica" and current_level == 0:
             pass
         else:
             for res_name, amount in b_type.cost.items():
-                c = int(amount * (1.5 ** current_level)) if current_level > 0 else amount
+                c = int(amount * (settings.building_growth_factor ** current_level)) if current_level > 0 else amount
                 cost_display[res_name] = c
                 if res_name not in res_dict or res_dict[res_name].amount < c:
                     can_build = False

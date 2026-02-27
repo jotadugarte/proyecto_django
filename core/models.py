@@ -2,6 +2,29 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.cache import cache
+
+class GameSettings(models.Model):
+    """
+    Singleton model to store global game configuration.
+    """
+    building_growth_factor = models.FloatField(default=1.5, help_text="Factor de crecimiento del coste por nivel (ej. 1.5)")
+    production_speed_multiplier = models.FloatField(default=1.0, help_text="Multiplicador de velocidad de ticks (ej. 60 para 1 min = 1 hora)")
+
+    class Meta:
+        verbose_name = "Configuración Global"
+        verbose_name_plural = "Configuración Global"
+
+    @classmethod
+    def load(cls):
+        # We can cache this for performance, but for now a simple DB hit is fine for prototyping.
+        # Ensure only one instance exists.
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def save(self, *args, **kwargs):
+        self.pk = 1 # Force pk=1 to ensure singleton
+        super().save(*args, **kwargs)
 
 class Galaxy(models.Model):
     name = models.CharField(max_length=100, default="Vía Láctea")

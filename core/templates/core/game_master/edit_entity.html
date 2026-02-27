@@ -1,0 +1,80 @@
+{% extends "core/base.html" %}
+
+{% block title %}GM Config - {{ title }}{% endblock %}
+
+{% block content %}
+<div
+    style="background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 30px; max-width: 600px; margin: 0 auto;">
+    <h2 style="margin-top: 0; color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 15px;">{{ title }}</h2>
+
+    <form method="post" style="margin-top: 20px;">
+        {% csrf_token %}
+
+        {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+        {% endfor %}
+
+        {% for field in form.visible_fields %}
+        <div style="margin-bottom: 20px;">
+            <label for="{{ field.id_for_label }}"
+                style="display: block; font-weight: bold; margin-bottom: 8px; color: #c9d1d9;">
+                {{ field.label }}
+                {% if field.field.required %}
+                <span style="color: #f85149;" title="Requerido">*</span>
+                {% endif %}
+            </label>
+
+            {{ field }}
+
+            {% if field.help_text %}
+            <div style="font-size: 0.85em; color: #8b949e; margin-top: 4px;">{{ field.help_text }}</div>
+            {% endif %}
+
+            {% for error in field.errors %}
+            <div style="color: #f85149; font-size: 0.9em; margin-top: 4px;">{{ error }}</div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <div style="margin-top: 30px; display: flex; gap: 10px; border-top: 1px solid #30363d; padding-top: 20px;">
+            <button type="submit" class="btn" style="background-color: #2ea44f; color: white;">Guardar {{ entity_name
+                }}</button>
+            <a href="{% url 'gm_dashboard' %}" class="btn"
+                style="background-color: transparent; color: #8b949e; border-color: #30363d;">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<style>
+    /* Styling specifically for generated form inputs to match GitHub Dark aesthetic */
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+        width: 100%;
+        padding: 8px 12px;
+        background-color: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        color: #c9d1d9;
+        font-family: inherit;
+        font-size: 14px;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #58a6ff;
+        box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+    }
+
+    input[type="checkbox"] {
+        margin-right: 8px;
+        transform: scale(1.2);
+    }
+</style>
+{% endblock %}

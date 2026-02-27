@@ -1,0 +1,105 @@
+{% extends "core/base.html" %}
+
+{% block title %}Panel de Game Master{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #30363d; padding-bottom: 10px; margin-bottom: 20px;">
+    <h1 style="color: #58a6ff; margin: 0;">Panel de Configuración (Game Master)</h1>
+    <a href="{% url 'index' %}" class="btn" style="background-color: #30363d; border-color: #8b949e;">Volver al Juego</a>
+</div>
+
+<!-- Global Settings Card -->
+<div class="card" style="border-left: 4px solid #d29922;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; border: none; font-size: 1.25em;">Configuración Global</h3>
+        <a href="{% url 'gm_edit_settings' %}" class="btn" style="background-color: #d29922;">Editar Variables</a>
+    </div>
+    <div style="margin-top: 15px; display: flex; gap: 40px;">
+        <div>
+            <span style="color: #8b949e; font-size: 0.9em; display: block;">Escala de Crecimiento (Costes)</span>
+            <strong style="font-size: 1.2em;">x {{ settings.building_growth_factor }}</strong>
+        </div>
+        <div>
+            <span style="color: #8b949e; font-size: 0.9em; display: block;">Multiplicador Ticks de Producción</span>
+            <strong style="font-size: 1.2em; color: #3fb950;">x {{ settings.production_speed_multiplier }}</strong>
+        </div>
+    </div>
+</div>
+
+<!-- Buildings Section -->
+<h2 style="margin-top: 40px; color: #c9d1d9;">Estructuras / Edificios</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Coste Base</th>
+            <th>Producción Base</th>
+            <th style="width: 100px; text-align: center;">Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for b in buildings %}
+        <tr>
+            <td><strong>{{ b.name }}</strong></td>
+            <td><span style="background-color: #21262d; padding: 3px 8px; border-radius: 12px; font-size: 0.85em;">{{ b.get_category_display }}</span></td>
+            <td>
+                {% for res, amount in b.cost.items %}
+                    <span style="display: inline-block; background: #1f2428; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; margin: 2px;">{{ res }}: <span style="color: #f85149;">{{ amount }}</span></span>
+                {% empty %}
+                    <span style="color: #8b949e;">Gratis</span>
+                {% endfor %}
+            </td>
+            <td>
+                {% for res, rate in b.production.items %}
+                    <span style="display: inline-block; background: #1f2428; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; margin: 2px;">{{ res }}: <span style="color: #3fb950;">+{{ rate }}/h</span></span>
+                {% empty %}
+                    <span style="color: #8b949e;">-</span>
+                {% endfor %}
+            </td>
+            <td style="text-align: center;">
+                <a href="{% url 'gm_edit_building' b.pk %}" class="btn" style="padding: 4px 10px;">Editar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Units Section -->
+<h2 style="margin-top: 40px; color: #c9d1d9;">Naves y Defensas</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>Coste Base</th>
+            <th>Estadísticas</th>
+            <th style="width: 100px; text-align: center;">Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u in units %}
+        <tr>
+            <td><strong>{{ u.name }}</strong></td>
+            <td><span style="background-color: #21262d; padding: 3px 8px; border-radius: 12px; font-size: 0.85em;">{{ u.get_category_display }}</span></td>
+            <td>
+                {% for res, amount in u.cost.items %}
+                    <span style="display: inline-block; background: #1f2428; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; margin: 2px;">{{ res }}: <span style="color: #f85149;">{{ amount }}</span></span>
+                {% empty %}
+                    <span style="color: #8b949e;">Gratis</span>
+                {% endfor %}
+            </td>
+            <td>
+                {% for stat, val in u.stats.items %}
+                    <span style="display: inline-block; background: #1f2428; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; margin: 2px;">{{ stat|title }}: <span style="color: #58a6ff;">{{ val }}</span></span>
+                {% endfor %}
+            </td>
+            <td style="text-align: center;">
+                <a href="{% url 'gm_edit_unit' u.pk %}" class="btn" style="padding: 4px 10px;">Editar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

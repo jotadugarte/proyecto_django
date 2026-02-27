@@ -6,8 +6,18 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.views.decorators.http import require_http_methods
 
-from .forms import UserRegistrationForm
-from .models import Planet, BuildingType, PlanetBuilding, PlanetResource, PlanetUnit, ResourceType, UnitType
+from .decorators import game_master_required
+from .forms import BuildingTypeForm, GameSettingsForm, UnitTypeForm, UserRegistrationForm
+from .models import (
+    BuildingType,
+    GameSettings,
+    Planet,
+    PlanetBuilding,
+    PlanetResource,
+    PlanetUnit,
+    ResourceType,
+    UnitType,
+)
 from .selectors.planet_buildings import get_buildings_info_for_planet
 from .services.production import tick_planet_production
 from .services.building import upgrade_building
@@ -104,3 +114,72 @@ def planet_detail(request, planet_id):
         "available_units": available_units,
     }
     return render(request, "core/planet_detail.html", context)
+
+
+@game_master_required
+def gm_dashboard(request):
+    """Main dashboard for game masters."""
+    buildings = BuildingType.objects.all()
+    units = UnitType.objects.all()
+    settings = GameSettings.load()
+    
+    context = {
+        "buildings": buildings,
+        "units": units,
+        "settings": settings,
+    }
+    return render(request, "core/game_master/dashboard.html", context)
+
+@game_master_required
+def gm_edit_settings(request):
+    settings = GameSettings.load()
+    if request.method == "POST":
+        form = GameSettingsForm(request.POST, instance=settings)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Settings updated successfully.")
+            return redirect("gm_dashboard")
+    else:
+        form = GameSettingsForm(instance=settings)
+        
+    return render(request, "core/game_master/edit_entity.html", {
+        "form": form,
+        "title": "Edit Global Game Settings",
+        "entity_name": "Game Settings"
+    })
+
+@game_master_required
+def gm_edit_building(request, pk):
+    building = get_object_or_404(BuildingType, pk=pk)
+    if request.method == "POST":
+        form = BuildingTypeForm(request.POST, instance=building)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Building '{building.name}' updated successfully.")
+            return redirect("gm_dashboard")
+    else:
+        form = BuildingTypeForm(instance=building)
+        
+    return render(request, "core/game_master/edit_entity.html", {
+        "form": form,
+        "title": f"Edit Building: {building.name}",
+        "entity_name": building.name
+    })
+
+@game_master_required
+def gm_edit_unit(request, pk):
+    unit = get_object_or_404(UnitType, pk=pk)
+    if request.method == "POST":
+        form = UnitTypeForm(request.POST, instance=unit)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Unit '{unit.name}' updated successfully.")
+            return redirect("gm_dashboard")
+    else:
+        form = UnitTypeForm(instance=unit)
+        
+    return render(request, "core/game_master/edit_entity.html", {
+        "form": form,
+        "title": f"Edit Unit: {unit.name}",
+        "entity_name": unit.name
+    })

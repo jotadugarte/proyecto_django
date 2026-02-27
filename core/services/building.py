@@ -13,9 +13,12 @@ def _calculate_build_cost(building_type: BuildingType, current_level: int) -> di
     is_free = building_type.name == "Planta Eolica" and current_level == 0
     if is_free:
         return {}
+        
+    from core.models import GameSettings
+    settings = GameSettings.load()
 
     return {
-        res_name: int(amount * (1.5 ** current_level)) if current_level > 0 else int(amount)
+        res_name: int(amount * (settings.building_growth_factor ** current_level)) if current_level > 0 else int(amount)
         for res_name, amount in building_type.cost.items()
     }
 

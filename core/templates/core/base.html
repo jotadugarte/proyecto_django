@@ -163,6 +163,16 @@
             </li>
             {% endfor %}
         </ul>
+
+        {% if user.is_superuser %}
+        <hr style="border-color: #30363d; margin: 15px 0;">
+        <h3 style="color: #d29922;">Administración</h3>
+        <ul>
+            <li>
+                <a href="{% url 'gm_dashboard' %}" style="color: #d29922;">Panel Game Master</a>
+            </li>
+        </ul>
+        {% endif %}
         <div class="nav-logout">
             <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
@@ -177,7 +187,8 @@
         {% if messages %}
         <ul class="messages" style="list-style: none; padding: 0; margin: 0 0 20px 0;">
             {% for message in messages %}
-            <li style="padding: 10px 16px; border-radius: 6px; margin-bottom: 8px; border: 1px solid {% if message.tags == 'error' %}#f85149{% else %}#3fb950{% endif %}; background: {% if message.tags == 'error' %}#3d1f1f{% else %}#1a2e1a{% endif %}; color: {% if message.tags == 'error' %}#f85149{% else %}#3fb950{% endif %};">
+            <li
+                style="padding: 10px 16px; border-radius: 6px; margin-bottom: 8px; border: 1px solid {% if message.tags == 'error' %}#f85149{% else %}#3fb950{% endif %}; background: {% if message.tags == 'error' %}#3d1f1f{% else %}#1a2e1a{% endif %}; color: {% if message.tags == 'error' %}#f85149{% else %}#3fb950{% endif %};">
                 {{ message }}
             </li>
             {% endfor %}

@@ -18,7 +18,13 @@ def _compute_produced(planet: Planet, now: datetime) -> dict[str, float] | None:
         return None
 
     elapsed_seconds = (now - planet.last_production_tick).total_seconds()
-    elapsed_hours = elapsed_seconds / 3600.0
+    
+    # Import here to avoid circular dependencies if any, though models could be imported at top level
+    from core.models import GameSettings
+    settings = GameSettings.load()
+    
+    elapsed_hours = (elapsed_seconds / 3600.0) * settings.production_speed_multiplier
+    
     if elapsed_hours <= 0:
         return None
 
