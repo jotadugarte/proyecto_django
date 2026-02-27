@@ -9,15 +9,15 @@
 * **Styling/UI Engine:** [e.g., Tamagui / CSS Variables & BEM]
 
 ## 2. Architectural Paradigm
-* **Design Pattern:** [e.g., Local-First Offline Sync / Service-Object Backend]
-* **State Management:** [e.g., React Query for Server State, Zustand for UI State]
-* **API Paradigm:** [e.g., RESTful JSON / GraphQL]
+* **Design Pattern:** Architecture Layered con Service Objects para la lógica de negocio y Selectores para queries complejas.
+* **State Management:** *Lazy Evaluation* para simulación de tiempo real (calcular producción on-demand basada en `last_tick` al cargar datos, sin cron jobs globales).
+* **API Paradigm:** Web tradicional (Templates Django) con SSR (Server-Side Rendering).
 
 ## 3. The "Kill List" (Forbidden Patterns)
 *AI Agents MUST NOT use or suggest the following under any circumstances:*
-* 🚫 **[Forbidden Tech 1]:** [e.g., Tailwind CSS - Use Tamagui tokens instead]
-* 🚫 **[Forbidden Tech 2]:** [e.g., Redux - Use React Query]
-* 🚫 **[Forbidden Pattern]:** [e.g., Fat Controllers - All business logic must be in Service Objects]
+* 🚫 **Fat Controllers / Fat Views:** Toda la lógica de negocio debe residir en `services/` (mutaciones) o `selectors/` (lecturas). Las views solo manejan HTTP.
+* 🚫 **N+1 Queries / individuales `.save()` en loops:** Queda prohibido iterar sobre listas para hacer `.save()` (usar `bulk_update()`) o crear registros individuales en loops (usar `bulk_create(ignore_conflicts=True)`).
+* 🚫 **Mutaciones parciales de estado:** Cualquier actualización que afecte a múltiples modelos (ej. deducir recursos y subir de nivel un edificio) debe estar encapsulada en `transaction.atomic`.
 
 ## 4. Environment & Infrastructure
 * **Deployment Target:** [e.g., iOS/Android App Stores / Kamal to Bare Metal]

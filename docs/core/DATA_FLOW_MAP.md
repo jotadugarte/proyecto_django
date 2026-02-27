@@ -3,20 +3,21 @@
 **Purpose:** Maps how entities mutate and propagate throughout the system. AI agents must consult this document to ensure they do not orphan data or bypass necessary side-effects.
 
 ## 1. Primary Data Flow
-*(Example Template: Describe the standard lifecycle of your core entity here)*
-1. **Client** submits payload.
-2. **API/Controller** validates payload schema.
-3. **Service Object** executes business logic (Pre/Post conditions checked).
-4. **ORM/Database** persists state.
+*(Building / Upgrade Request)*
+1. **Client** hace POST a la vista de detalle de planeta con el ID del edificio a mejorar.
+2. **Service (`core.services.building`)** valida precondiciones: calcula el costo y verifica los saldos (saldo `>=` costo).
+3. **Service** ejecuta actualización transaccional (`transaction.atomic`) descontando los saldos en masa (`bulk_update`) e incrementando el nivel del edificio.
+4. **Client** recibe redirect para recargar la vista.
 
 ## 2. Cascading Side Effects
 *When an entity is modified, these asynchronous or secondary actions MUST occur:*
 
 | Trigger Action | Required Side Effect | Mechanism |
 |---|---|---|
-| [e.g., User created] | [e.g., Send welcome email] | [e.g., Background Job / Webhook] |
-| [e.g., Order completed] | [e.g., Deduct inventory] | [e.g., Database Transaction] |
+| **User created** (`User` model post_save) | Se crea el `DictatorProfile` asociado. Se busca un `Planet` sin dueño y se le asocia como `main_planet`. | Django Signal (`core/signals.py`) |
+| **User visits Planet** (GET a `planet_detail`) | El tiempo transcurrido desde la última visita muta los recursos (ingreso pasivo). | Call a `tick_planet_production()` en la View |
+| **User visits Planet** | Se asegura la existencia de todo tipo de recurso base (`PlanetResource`) para el planeta, uniendo arrays faltantes. | Call a `bulk_create(ignore_conflicts=True)` en la View |
 
 ## 3. Caching Invalidation Strategy
-* **Strategy:** [e.g., Cache invalidation via updated_at timestamps]
-* **Critical Nodes:** [List any UI components or API endpoints that require manual cache purging when underlying data changes].
+* **Strategy:** [Pendiente de definir, actualmente operaciones directas sobre BD SQLite]
+* **Critical Nodes:** Ninguno por el momento.
