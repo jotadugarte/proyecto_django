@@ -1,11 +1,30 @@
 from django.core.management.base import BaseCommand
-from core.models import Galaxy, SolarSystem, Planet, ResourceType, BuildingType, UnitType
-import math
+from django.contrib.auth.models import User
+
+from core.models import (
+    Galaxy,
+    SolarSystem,
+    Planet,
+    ResourceType,
+    BuildingType,
+    UnitType,
+    Dictator,
+)
+
 
 class Command(BaseCommand):
-    help = 'Setup initial game data'
+    help = "Setup initial game data (galaxy, systems, planets, resources, admin). Use --test to also create test users (orion, perseo)."
 
-    def handle(self, *args, **kwargs):
+    def add_arguments(self, parser) -> None:
+        parser.add_argument(
+            "--test",
+            action="store_true",
+            dest="test",
+            help="Create test dictator users (orion, perseo). Omit for production (admin only).",
+        )
+
+    def handle(self, *args, **options) -> None:
+        test_mode: bool = options["test"]
         self.stdout.write("Setting up game data...")
 
         # 1. Galaxy
@@ -23,7 +42,7 @@ class Command(BaseCommand):
         buildings = [
             # Extractores
             ('Mina de Plastilina', 'extraction', {'Energía Eólica': 10}, {'Plastilina': 10}),
-            ('Planta Eolica', 'extraction', {}, {'Energía Eólica': 20}), # Costo 0 nivel 1
+            ('Planta Eolica', 'extraction', {'Energía Eólica': 20}, {'Energía Eólica': 20}),  # Nivel 0->1 gratis; 1->2+ usa este coste base
             ('Siembra de Café con Vaca', 'extraction', {'Plastilina': 100, 'Energía Eólica': 50}, {'Café con Leche': 5}),
             
             # Hangar
@@ -98,4 +117,30 @@ class Command(BaseCommand):
         else:
             self.stdout.write("Universe already exists.")
 
-        self.stdout.write(self.style.SUCCESS('Game Setup Complete!'))
+        # 6. Admin superuser (for /admin/)
+        if not User.objects.filter(username="admin").exists():
+            User.objects.create_superuser("admin", "admin@example.com", "admin")
+            self.stdout.write("Created superuser 'admin' (password: admin).")
+        else:
+            self.stdout.write("Superuser 'admin' already exists.")
+
+        # 7. Test dictator users (only when --test)
+        if test_mode:
+            dictator_users = [
+                ("orion", "orion1234"),
+                ("perseo", "perseo1234"),
+            ]
+            for username, password in dictator_users:
+                if not User.objects.filter(username=username).exists():
+                    user = User.objects.create_user(username=username, password=password)
+                    dictator = Dictator.objects.get(user=user)
+                    if dictator.main_planet:
+                        self.stdout.write(f"Created dictator '{username}' -> planet {dictator.main_planet}.")
+                    else:
+                        self.stdout.write(self.style.WARNING(f"Created '{username}' but no free planet assigned."))
+                else:
+                    self.stdout.write(f"User '{username}' already exists.")
+        else:
+            self.stdout.write("Skipping test users (production mode). Use --test to create orion/perseo.")
+
+        self.stdout.write(self.style.SUCCESS("Game Setup Complete!"))

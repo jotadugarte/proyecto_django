@@ -75,6 +75,17 @@
             <h4>{{ b_info.type.name }}</h4>
             <p><strong>Nivel Actual: {{ b_info.current_level }}</strong></p>
 
+            {% if b_info.production_display %}
+            <div style="font-size: 0.9em; margin-bottom: 10px;">
+                <strong style="color: #3fb950;">Producción:</strong>
+                {% for p in b_info.production_display %}
+                <span class="{% if p.resource_name == 'Plastilina' %}res-plastilina{% elif p.resource_name == 'Energía Eólica' %}res-energia{% elif p.resource_name == 'Café con Leche' %}res-cafe{% endif %}">
+                    {{ p.resource_name }}: {{ p.per_minute|floatformat:2 }}/min · {{ p.per_hour|floatformat:0 }}/h
+                </span>{% if not forloop.last %} | {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <div style="font-size: 0.8em; color: #8b949e; margin-bottom: 10px;">
                 Costo Nivel {{ b_info.next_level }}:
                 {% for res, val in b_info.cost_display.items %}
